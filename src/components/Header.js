@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { withStyles } from "material-ui/styles";
 import { compose } from "redux";
 import { connect } from "react-redux";
-import { login, logout } from "../ac";
+import { login, logout, sortParamsChange, currentPageChange } from "../ac";
 import AppBar from "material-ui/AppBar";
 import Toolbar from "material-ui/Toolbar";
 import Typography from "material-ui/Typography";
@@ -15,6 +15,9 @@ import Dialog, {
   DialogContentText,
   DialogTitle
 } from "material-ui/Dialog";
+import { MenuItem } from "material-ui/Menu";
+import Select from "material-ui/Select";
+import AddTaskDialog from "./AddTaskDialog";
 
 const styles = {
   root: {
@@ -30,6 +33,18 @@ const styles = {
     color: "red",
     marginTop: "10px",
     fontSize: ".8em"
+  },
+  sortParamsSelect: {
+    width: "150px",
+    marginLeft: "10px"
+  },
+  pageSelect: {
+    width: "50px",
+    marginLeft: "10px",
+    marginRight: "10px"
+  },
+  addTaskBtn: {
+    marginLeft: "30px"
   }
 };
 
@@ -37,12 +52,21 @@ class Header extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      isAddTaskDialogOpen: false,
       isDialogOpen: false,
       username: "",
       password: "",
       errorMessage: ""
     };
   }
+
+  handleAddTaskClick = ev => {
+    this.setState({ isAddTaskDialogOpen: true });
+  };
+
+  handleAddTaskDialogClose = ev => {
+    this.setState({ isAddTaskDialogOpen: false });
+  };
 
   handleAuthButtonClick = ev => {
     const { isLogin, logout } = this.props;
@@ -78,7 +102,6 @@ class Header extends Component {
       this.setState({ errorMessage: errors.join(", ") });
       ev.preventDefault();
     } else {
-      console.log(login);
       login();
       this.setState({
         isDialogOpen: false,
@@ -89,9 +112,31 @@ class Header extends Component {
     }
   };
 
+  handleSortParamsChange = ev => {
+    const { sortParamsChange } = this.props;
+    sortParamsChange(ev.target.value);
+  };
+
+  handleCurrentPageChange = ev => {
+    const { currentPageChange } = this.props;
+    currentPageChange(ev.target.value);
+  };
+
   render() {
-    const { classes, isLogin } = this.props;
-    const { isDialogOpen, username, password, errorMessage } = this.state;
+    const {
+      classes,
+      isLogin,
+      sortParam,
+      totalTasksCount,
+      currentPage
+    } = this.props;
+    const {
+      isAddTaskDialogOpen,
+      isDialogOpen,
+      username,
+      password,
+      errorMessage
+    } = this.state;
     const renderLoginStatus = (
       <Typography variant="body1" color="inherit" className={classes.username}>
         You are loggined as Admin
@@ -102,8 +147,19 @@ class Header extends Component {
         Error: {errorMessage}!
       </DialogContentText>
     );
+    const getPages = () => {
+      const arr = [];
+      for (let i = 1; i <= totalTasksCount; i++) {
+        arr.push(<MenuItem value={i}> {i} </MenuItem>);
+      }
+      return arr;
+    };
     return (
       <Fragment>
+        <AddTaskDialog
+          isOpen={isAddTaskDialogOpen}
+          onClose={this.handleAddTaskDialogClose}
+        />
         <Dialog
           open={isDialogOpen}
           disableBackdropClick
@@ -155,6 +211,62 @@ class Header extends Component {
                 className={classes.flex}
               >
                 Tasks
+                <Button
+                  variant="raised"
+                  color="primary"
+                  className={classes.addTaskBtn}
+                  onClick={this.handleAddTaskClick}
+                >
+                  Add Task
+                </Button>
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="inherit"
+                className={classes.flex}
+              >
+                Sort by:
+                <Select
+                  value={sortParam}
+                  className={classes.sortParamsSelect}
+                  onChange={this.handleSortParamsChange}
+                >
+                  <MenuItem value={0}>
+                    Username ↑
+                  </MenuItem>
+                  <MenuItem value={1}>
+                    Username ↓
+                  </MenuItem>
+                  <MenuItem value={2}>
+                    Email ↑
+                  </MenuItem>
+                  <MenuItem value={3}>
+                    Email ↓
+                  </MenuItem>
+                  <MenuItem value={4}>
+                    Status ↑
+                  </MenuItem>
+                  <MenuItem value={5}>
+                    Status ↓
+                  </MenuItem>
+                </Select>
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="inherit"
+                className={classes.flex}
+              >
+                Page:
+                <Select
+                  value={currentPage}
+                  className={classes.pageSelect}
+                  onChange={this.handleCurrentPageChange}
+                >
+                  {getPages()}
+                </Select>
+                from {totalTasksCount}
               </Typography>
               {isLogin && renderLoginStatus}
               <Button color="inherit" onClick={this.handleAuthButtonClick}>
@@ -172,22 +284,23 @@ Header.propTypes = {
   classes: PropTypes.object.isRequired,
   isLogin: PropTypes.bool.isRequired,
   login: PropTypes.func.isRequired,
-  logout: PropTypes.func.isRequired
+  logout: PropTypes.func.isRequired,
+  sortParamsChange: PropTypes.func.isRequired,
+  currentPageChange: PropTypes.func.isRequired,
+  sortParam: PropTypes.number.isRequired,
+  currentPage: PropTypes.number.isRequired,
+  totalTasksCount: PropTypes.number.isRequired
 };
-/*
+
 export default compose(
   connect(
     state => ({
-      isLogin: state.login
+      isLogin: state.login,
+      sortParam: state.tastsVisibleParams.sort,
+      currentPage: state.tastsVisibleParams.page,
+      totalTasksCount: state.totalTasksCount
     }),
-    { login, logout }
+    { login, logout, sortParamsChange, currentPageChange }
   ),
   withStyles(styles)
 )(Header);
-*/
-export default connect(
-  state => ({
-    isLogin: state.login
-  }),
-  { login, logout }
-)(withStyles(styles)(Header));

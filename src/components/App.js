@@ -1,14 +1,16 @@
 import React, { Component } from "react";
-import Header from "./Header";
 import { Provider } from "react-redux";
 import store from "../store";
+import Header from "./Header";
+import TaskList from "./TaskList";
 
 class App extends Component {
   render() {
     return (
       <Provider store={store}>
-        <div>
-          <Header isLogin={false} />
+        <div style={{ height: "100%" }}>
+          <Header />
+          <TaskList />
         </div>
       </Provider>
     );
