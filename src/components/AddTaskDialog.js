@@ -25,6 +25,18 @@ const styles = {
     color: "red",
     marginTop: "10px",
     fontSize: ".8em"
+  },
+  previewBlock: {
+    display: "flex",
+    justifyContent: "flex-start",
+    alignItems: "center"
+  },
+  previewImg: {
+    width: "200px",
+    marginRight: "10px"
+  },
+  previewContent: {
+    width: "200px"
   }
 };
 
@@ -36,7 +48,8 @@ class AddTaskDialog extends Component {
       username: "",
       email: "",
       text: "",
-      img: ""
+      img: "",
+      showPreview: false
     };
     this.state = this.defaultState;
   }
@@ -51,6 +64,9 @@ class AddTaskDialog extends Component {
     const { saveTask, onClose, saveTaskError } = this.props;
     const task = { ...this.state };
     saveTask(task);
+    if (!saveTaskError) {
+      onClose();
+    }
   };
 
   handleInputChange = type => ev => {
@@ -72,10 +88,95 @@ class AddTaskDialog extends Component {
     }
   }
 
+  handlePreviewClick = ev => {
+    this.setState({ showPreview: !this.state.showPreview });
+  };
+
+  previewImgRef = el => {
+    const { img } = this.state;
+    if (!el || !img) return;
+    const reader = new FileReader();
+    reader.onload = function() {
+      el.src = reader.result;
+    };
+    reader.readAsDataURL(img);
+  };
+
   render() {
     const { classes, isOpen, onClose, saveTaskError } = this.props;
-    const { username, email, text, img } = this.state;
+    const { username, email, text, img, showPreview } = this.state;
 
+    const editForm = (
+      <DialogContent>
+        <DialogContentText>
+          Please enter Task properties.
+        </DialogContentText>
+        <TextField
+          autoFocus
+          required
+          fullWidth
+          margin="dense"
+          id="username"
+          label="Username"
+          value={username}
+          onChange={this.handleInputChange("username")}
+        />
+        <br />
+        <TextField
+          required
+          fullWidth
+          id="email"
+          label="email"
+          margin="dense"
+          value={email}
+          onChange={this.handleInputChange("email")}
+        />
+        <TextField
+          required
+          fullWidth
+          id="text"
+          label="text"
+          margin="dense"
+          value={text}
+          onChange={this.handleInputChange("text")}
+        />
+        <input
+          accept="image/*"
+          className={classes.input}
+          id="raised-button-file"
+          type="file"
+          onChange={this.handleInputChange("img")}
+        />
+        <label htmlFor="raised-button-file">
+          <Button variant="raised" component="span" className={classes.button}>
+            Upload immage
+          </Button>
+
+        </label>
+        <div className={classes.errorMesage}>
+          {saveTaskError ? `Error in fields: ${saveTaskError}!` : ""}
+        </div>
+      </DialogContent>
+    );
+
+    const previewBlock = (
+      <DialogContent className={classes.previewBlock}>
+        <div className={classes.previewImg}>
+          <img width="200" ref={this.previewImgRef} />
+        </div>
+        <div className={classes.previewContent}>
+          <Typography variant="subheading" className={classes.propertyTitle}>
+            Username: {username}
+          </Typography>
+          <Typography variant="subheading" className={classes.propertyTitle}>
+            Email: {email}
+          </Typography>
+          <Typography variant="subheading" className={classes.propertyTitle}>
+            Text: {text}
+          </Typography>
+        </div>
+      </DialogContent>
+    );
     return (
       <Dialog
         open={isOpen}
@@ -84,61 +185,15 @@ class AddTaskDialog extends Component {
         aria-labelledby="form-dialog-title"
       >
         <DialogTitle id="form-dialog-title">Add Task</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Please enter Task properties.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            required
-            fullWidth
-            margin="dense"
-            id="username"
-            label="Username"
-            value={username}
-            onChange={this.handleInputChange("username")}
-          />
-          <br />
-          <TextField
-            required
-            fullWidth
-            id="email"
-            label="email"
-            margin="dense"
-            value={email}
-            onChange={this.handleInputChange("email")}
-          />
-          <TextField
-            required
-            fullWidth
-            id="text"
-            label="text"
-            margin="dense"
-            value={text}
-            onChange={this.handleInputChange("text")}
-          />
-          <input
-            accept="image/*"
-            className={classes.input}
-            id="raised-button-file"
-            type="file"
-            onChange={this.handleInputChange("img")}
-          />
-          <label htmlFor="raised-button-file">
-            <Button
-              variant="raised"
-              component="span"
-              className={classes.button}
-            >
-              Upload immage
-            </Button>
-
-          </label>
-          <div className={classes.errorMesage}>
-            {saveTaskError ? `Error in fields: ${saveTaskError}!` : ""}
-          </div>
-        </DialogContent>
+        {showPreview ? previewBlock : editForm}
         <DialogActions>
+          <Button
+            onClick={this.handlePreviewClick}
+            color="secondary"
+            disabled={!(username && email && text && img)}
+          >
+            {showPreview ? "Edit" : "Preview"}
+          </Button>
           <Button onClick={this.handleClose} color="primary">
             Cancel
           </Button>
